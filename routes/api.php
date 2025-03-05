@@ -23,5 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('tables', [TableController::class, 'index']);
-Route::patch('tables/reserve', [TableController::class, 'reserve']);
-Route::patch('tables/free', [TableController::class, 'free']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::patch('tables/reserve/{tableNumber}', [TableController::class, 'reserve']);
+    Route::patch('tables/free/{tableNumber}', [TableController::class, 'free']);
+});

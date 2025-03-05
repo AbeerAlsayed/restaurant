@@ -13,74 +13,86 @@ use Illuminate\Support\Facades\Notification;
 
 class TableController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return TableResource::collection(Table::all());
-    }
-
-
-
-    public function reserve(Request $request)
-    {
-        // التحقق من البيانات المدخلة
         $request->validate([
-            'table_number' => 'required|integer|exists:tables,table_number',
+            'floor' => 'nullable|integer|in:1,2',
         ]);
 
-        return DB::transaction(function () use ($request) {
-            // البحث عن الطاولة
-            $table = Table::where('table_number', $request->table_number)->first();
+        $tables = Table::when($request->floor, function ($query) use ($request) {
+            return $query->where('floor', $request->floor);
+        })->get();
 
-            // التحقق من توفر الطاولة
+        return TableResource::collection($tables);
+    }
+
+    public function reserve(Request $request, $tableNumber)
+    {
+        if (!auth()->check()) {
+            return response()->json(['message' => 'You must be logged in to reserve a table.'], 403);
+        }
+
+        $table = Table::where('table_number', $tableNumber)->first();
+
+        if (!$table) {
+            return response()->json(['message' => 'Table not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'guests_count' => 'required|integer|min:1',
+        ]);
+
+        return DB::transaction(function () use ($table, $validated) {
             if ($table->status !== 'available') {
+                return response()->json(['message' => 'This table is not available.'], 400);
+            }
+
+            if ($validated['guests_count'] > $table->capacity) {
                 return response()->json([
-                    'message' => 'This table is already reserved or occupied.'
+                    'message' => 'The table cannot accommodate this number of guests.',
+                    'table_capacity' => $table->capacity,
                 ], 400);
             }
 
-            // تحديث حالة الطاولة إلى "محجوزة"
-            $table->update(['status' => 'reserved']);
+            $table->update([
+                'status' => 'reserved',
+                'reserved_by' => auth()->id(),
+                'guests_count' => $validated['guests_count'],
+            ]);
 
-            // إرسال إشعار إلى المدير
-            $admin = User::first();
-            if ($admin) {
-                $admin->notify(new TableReservedNotification($table));
-            }
-
-            // إرجاع الاستجابة بعد نجاح العملية
             return response()->json([
                 'message' => 'Table has been reserved successfully.',
-                'table' => new TableResource($table)
+                'table' => new TableResource($table),
             ], 200);
         });
     }
 
-    public function free(Request $request)
+    public function free($tableNumber)
     {
-        $validated = $request->validate([
-            'table_number' => 'required|integer|exists:tables,table_number',
-        ]);
-
-        // الحصول على الطاولة باستخدام رقم الطاولة المدخل
-        $table = Table::where('table_number', $validated['table_number'])->first();
+        $table = Table::where('table_number', $tableNumber)->first();
 
         return DB::transaction(function () use ($table) {
-            // التحقق مما إذا كانت الطاولة بالفعل متاحة
-            if ($table->status === 'available') {
+            if ($table->status !== 'reserved') {
                 return response()->json([
-                    'message' => 'This table is already available.'
+                    'message' => 'This table is not reserved.'
                 ], 400);
             }
 
-            // تحرير الطاولة وجعلها متاحة مجددًا
-            $table->update(['status' => 'available']);
+            if ($table->reserved_by !== auth()->id()) {
+                return response()->json([
+                    'message' => 'You are not authorized to free this table.'
+                ], 403);
+            }
 
-            // إرسال إشعار عند تحرير الطاولة (اختياري)
-//            Notification::send($table->user, new TableFreedNotification($table));
+            $table->update([
+                'status' => 'available',
+                'reserved_by' => null,
+                'guests_count' => null,
+            ]);
 
             return response()->json([
                 'message' => 'Table has been freed successfully.',
-                'table' => $table
+                'table' => new TableResource($table), // استخدام المورد لعرض الطاولة
             ], 200);
         });
     }

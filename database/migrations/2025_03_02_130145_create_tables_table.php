@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->integer('table_number')->unique();
+            $table->integer('floor')->default(1);
             $table->enum('status', ['available', 'reserved', 'occupied'])->default('available');
+            $table->foreignId('reserved_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->integer('guests_count')->nullable();
+            $table->integer('capacity');
             $table->timestamps();
         });
     }

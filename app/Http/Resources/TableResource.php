@@ -7,18 +7,20 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class TableResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'table_number' => $this->table_number,
+            'floor' => $this->floor,
             'status' => $this->status,
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'reserved_by' => $this->reserved_by ? [
+                'id' => $this->reserved_by,
+                'name' => $this->reservedBy?->name, // Assuming there is a relation to User model
+            ] : null,
+            'guests_count' => $this->guests_count ?? 0,
+            'capacity' => $this->capacity,
+            'created_at' => $this->created_at->toDateTimeString(),
         ];
     }
 }
