@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\RegisterController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
@@ -16,13 +17,14 @@ Route::controller(RegisterController::class)->group(function(){
 
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('users', UserController::class);
-    Route::apiResource('products', ProductController::class);
-    Route::apiResource('orders', OrderController::class);
     Route::post('payments', [PaymentController::class, 'store']);
 });
 
 Route::get('tables', [TableController::class, 'index']);
+Route::get('categories',[CategoryController::class,'index']);
+Route::get('products', [ProductController::class,'index']);
+Route::get('/orders', [OrderController::class, 'index']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::patch('tables/reserve/{tableNumber}', [TableController::class, 'reserve']);
     Route::patch('tables/free/{tableNumber}', [TableController::class, 'free']);

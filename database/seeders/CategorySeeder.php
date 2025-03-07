@@ -9,7 +9,9 @@ class CategorySeeder extends Seeder
 {
     public function run()
     {
-        $categories = ['Desserts', 'Drinks', 'Main Course', 'Appetizers'];
+
+
+        $categories = ['Desserts', 'Drinks', 'Main Course', 'Appetizers','Salads'];
 
         foreach ($categories as $category) {
             Category::create(['name' => $category]);

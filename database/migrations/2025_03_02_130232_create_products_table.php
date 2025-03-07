@@ -14,6 +14,10 @@ return new class extends Migration {
             $table->decimal('price', 8, 2);
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
             $table->string('image')->nullable();
+            $table->tinyInteger('spiciness_level')->default(0);
+            $table->string('availability_status')->default('N');
+            $table->boolean('gratuity')->default(false);
+            $table->decimal('discount_percentage', 5, 2)->default(0);
             $table->timestamps();
         });
     }

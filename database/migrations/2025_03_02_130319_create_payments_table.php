@@ -10,9 +10,11 @@ return new class extends Migration {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->enum('payment_method', ['cash', 'card', 'apple_pay', 'google_pay']);
-            $table->decimal('amount', 10, 2);
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
+            $table->decimal('amount', 8, 2);
+            $table->string('payment_method');
+            $table->string('status')->default('pending');
+            $table->string('stripe_payment_id')->nullable();
+
             $table->timestamps();
         });
     }

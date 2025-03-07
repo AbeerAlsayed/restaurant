@@ -6,20 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['table_id', 'user_id', 'status', 'total_price'];
+    protected $fillable = ['table_id', 'order_number','subtotal','service_charge', 'status', 'total'];
 
     public function table()
     {
         return $this->belongsTo(Table::class);
     }
 
-    public function user()
+    public function products()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(Product::class)->withPivot('quantity', 'price');
     }
 
-    public function orderItems()
+
+    public function payments()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(Payment::class);
     }
 }
