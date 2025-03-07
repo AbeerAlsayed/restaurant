@@ -26,6 +26,6 @@ Route::get('products', [ProductController::class,'index']);
 Route::get('/orders', [OrderController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::patch('tables/reserve/{tableNumber}', [TableController::class, 'reserve']);
-    Route::patch('tables/free/{tableNumber}', [TableController::class, 'free']);
+    Route::patch('tables/reserve', [TableController::class, 'reserve']);
+    Route::patch('tables/free', [TableController::class, 'free']);
 });

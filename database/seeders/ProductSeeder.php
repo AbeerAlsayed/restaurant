@@ -80,7 +80,7 @@ class ProductSeeder extends Seeder
                     'description' => $product['description'],
                     'price' => $product['price'],
                     'category_id' => $category->id,
-                    'image' =>asset('images/'.$product['image']) ,
+                    'image' =>$product['image'] ,
                     'spiciness_level' => $product['spiciness_level'],
                     'availability_status' => $product['availability_status'],
                     'gratuity' => $product['gratuity'],

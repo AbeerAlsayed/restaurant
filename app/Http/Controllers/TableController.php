@@ -26,21 +26,28 @@ class TableController extends Controller
         return TableResource::collection($tables);
     }
 
-    public function reserve(Request $request, $tableNumber)
+    public function reserve(Request $request)
     {
+
         if (!auth()->check()) {
             return response()->json(['message' => 'You must be logged in to reserve a table.'], 403);
         }
 
-        $table = Table::where('table_number', $tableNumber)->first();
-
-        if (!$table) {
-            return response()->json(['message' => 'Table not found.'], 404);
-        }
 
         $validated = $request->validate([
+            'table_number' => 'required|integer|exists:tables,table_number',
+            'floor' => 'required|integer|min:1',
             'guests_count' => 'required|integer|min:1',
         ]);
+
+        $table = Table::where([
+            ['table_number', $validated['table_number']],
+            ['floor', $validated['floor']]
+        ])->first();
+
+        if (!$table) {
+            return response()->json(['message' => 'Table not found on this floor.'], 404);
+        }
 
         return DB::transaction(function () use ($table, $validated) {
             if ($table->status !== 'available') {
@@ -67,9 +74,22 @@ class TableController extends Controller
         });
     }
 
-    public function free($tableNumber)
+    public function free(Request $request)
     {
-        $table = Table::where('table_number', $tableNumber)->first();
+        $validated = $request->validate([
+            'table_number' => 'required|integer|exists:tables,table_number',
+            'floor' => 'required|integer|min:1',
+        ]);
+
+        // ✅ البحث عن الطاولة باستخدام الرقم والطابق
+        $table = Table::where([
+            ['table_number', $validated['table_number']],
+            ['floor', $validated['floor']]
+        ])->first();
+
+        if (!$table) {
+            return response()->json(['message' => 'Table not found on this floor.'], 404);
+        }
 
         return DB::transaction(function () use ($table) {
             if ($table->status !== 'reserved') {
@@ -84,6 +104,7 @@ class TableController extends Controller
                 ], 403);
             }
 
+            // ✅ تحرير الطاولة
             $table->update([
                 'status' => 'available',
                 'reserved_by' => null,
@@ -92,7 +113,7 @@ class TableController extends Controller
 
             return response()->json([
                 'message' => 'Table has been freed successfully.',
-                'table' => new TableResource($table), // استخدام المورد لعرض الطاولة
+                'table' => new TableResource($table),
             ], 200);
         });
     }
